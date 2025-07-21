@@ -1,7 +1,6 @@
 // src/app/layout.js
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './globals.css'; // Optional: keep if you have custom styles
 
 export const metadata = {
   title: "Local Chat App",

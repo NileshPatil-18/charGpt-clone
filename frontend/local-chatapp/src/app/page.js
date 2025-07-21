@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import Sidebar from "@/components/Sidebar";
 import ChatWindow from "@/components/ChatWindow";
 import ChatInput from "@/components/ChatInput";
 import "@/styles/global.css"
@@ -225,7 +224,7 @@ const handleStop = async () => {
           message={message}
           setMessage={setMessage}
           onSend={handleSend}
-          onStop={() => setLoading(false)}
+          onStop={handleStop}
           loading={loading}
         />
       </div>
