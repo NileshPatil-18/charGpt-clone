@@ -82,13 +82,15 @@ const handleSend = async () => {
   }
 
   
-  // Add user message immediately
+  
+  const isFirstMessage = messages.length === 0;
+  
   const userMessage = { role: "user", content: message };
   setMessages((prev) => [...prev, userMessage]);
   
   // If this is the first message in the chat, update the title
-  if (messages.length === 0) {
-    const newTitle = message.length > 30 ? `${message.substring(0, 30)}...` : message;
+  if (isFirstMessage) {
+    const newTitle = message.length >10? `${message.substring(0, 30)}...` : message;
     
 try {
     const updateResponse = await fetch(`http://localhost:5000/api/chat/${currentChatId}`, {
@@ -98,9 +100,10 @@ try {
     });
 
     if (updateResponse.ok) {
+      const updatedChat = await updateResponse.json();
       setChats(prevChats => 
         prevChats.map(chat => 
-          chat.id === currentChatId ? { ...chat, title: newTitle } : chat
+          chat.id === currentChatId ? { ...chat, title: updatedChat.title} : chat
         )
       );
     } else {
@@ -130,11 +133,11 @@ try {
     };
 
     newEventSource.onmessage = (event) => {
-      if (event.data === "[DONE]") {
-        newEventSource.close();
-        setLoading(false);
-        return;
-      }
+  if (event.data === "[DONE]" || event.data === "[ABORTED]") {
+    newEventSource.close();
+    setLoading(false);
+    return;
+  }
 
       try {
         // Append new tokens to the assistant's message
@@ -190,6 +193,7 @@ const handleStop = async () => {
     setLoading(false);
   } catch (err) {
     console.error('Error stopping generation:', err);
+    setLoading(false);
   }
 };
 

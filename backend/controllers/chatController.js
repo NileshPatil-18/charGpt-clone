@@ -52,6 +52,12 @@ exports.sendMessage = async (req, res) => {
   const controller = new AbortController();
   setStreamController(chatId, controller);
 
+  req.on('close', () => {
+    if (!res.headersSent) {
+      controller.abort();
+    }
+  });
+
   try {
     // Save user message
     await pool.query(
@@ -135,7 +141,9 @@ exports.sendMessage = async (req, res) => {
       res.write('event: error\ndata: ' + JSON.stringify({ error: err.message }) + '\n\n');
     }
   } finally {
-    res.end();
+    if (!res.headersSent) {
+      res.end();
+    }
     abortStream(chatId);
   }
 };
@@ -156,19 +164,16 @@ exports.updateChatTitle = async (req, res) => {
     const { chatId } = req.params;
     const { title } = req.body;
 
-    // Find the chat in your database and update its title
-    // This example assumes you're using a simple in-memory store or database
-    const chat = chats.find(c => c.id === chatId);
-    if (!chat) {
+    const result = await pool.query(
+      'UPDATE chats SET title = $1 WHERE id = $2 RETURNING *',
+      [title, chatId]
+    );
+
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Chat not found' });
     }
 
-    chat.title = title;
-    
-    // If using a database, you would do something like:
-    // await Chat.findByIdAndUpdate(chatId, { title }, { new: true });
-
-    res.json(chat);
+    res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating chat title:', error);
     res.status(500).json({ error: 'Failed to update chat title' });
